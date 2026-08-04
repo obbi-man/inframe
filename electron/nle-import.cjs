@@ -91,6 +91,7 @@ function looksLikeVideoUrl(url) {
   return (
     /\.(mp4|webm|mov|m4v|mkv)(\?|$)/i.test(url) ||
     /videos\.pexels\.com/i.test(url) ||
+    /\/download\/video\//i.test(url) ||
     /\/video\//i.test(url)
   )
 }

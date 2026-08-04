@@ -1,13 +1,13 @@
 (() => {
-  const VERSION = 4
+  const VERSION = 5
   if (window.__inframeVersion === VERSION) return
-  // cleanup previous inject
-  document.querySelectorAll('.inframe-insert-btn').forEach((n) => n.remove())
+  document.querySelectorAll('.inframe-insert-btn, .inframe-page-insert').forEach((n) => n.remove())
   document.getElementById('inframe-inject-style')?.remove()
   window.__inframeVersion = VERSION
 
   const STYLE_ID = 'inframe-inject-style'
   const BTN_CLASS = 'inframe-insert-btn'
+  const PAGE_BTN_CLASS = 'inframe-page-insert'
   let activeEl = null
   let hideTimer = null
 
@@ -16,7 +16,7 @@
     const style = document.createElement('style')
     style.id = STYLE_ID
     style.textContent = `
-      .${BTN_CLASS} {
+      .${BTN_CLASS}, .${PAGE_BTN_CLASS} {
         position: fixed;
         z-index: 2147483646;
         padding: 8px 12px;
@@ -28,9 +28,15 @@
         cursor: pointer;
         box-shadow: 0 8px 24px rgba(0,0,0,.4);
         pointer-events: auto;
-        display: none;
       }
-      .${BTN_CLASS}:hover { filter: brightness(1.06); }
+      .${BTN_CLASS} { display: none; }
+      .${PAGE_BTN_CLASS} {
+        right: 18px;
+        bottom: 18px;
+        padding: 12px 16px;
+        font-size: 13px;
+      }
+      .${BTN_CLASS}:hover, .${PAGE_BTN_CLASS}:hover { filter: brightness(1.06); }
     `
     document.documentElement.appendChild(style)
   }
@@ -39,10 +45,90 @@
     return typeof url === 'string' && /^https?:\/\//i.test(url)
   }
 
+  function decodeUrl(raw) {
+    return String(raw || '')
+      .replace(/\\u002F/g, '/')
+      .replace(/\\\//g, '/')
+      .replace(/&amp;/g, '&')
+  }
+
+  function scrapePageVideoUrls() {
+    const found = new Set()
+    const push = (u) => {
+      const url = decodeUrl(u)
+      if (!isHttpUrl(url)) return
+      if (
+        /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url) ||
+        /videos\.pexels\.com|video-files|player\.vimeo|cdn\.pixabay/i.test(url)
+      ) {
+        found.add(url.split('#')[0])
+      }
+    }
+
+    const html = document.documentElement.innerHTML
+    const re = /https?:\/\/[^"'\\\s<>]+/g
+    let match
+    while ((match = re.exec(html))) {
+      if (/videos\.pexels\.com|video-files|\.mp4|\.webm|\.mov/i.test(match[0])) push(match[0])
+    }
+
+    const next = document.getElementById('__NEXT_DATA__')
+    if (next?.textContent) {
+      try {
+        const walk = (node) => {
+          if (!node) return
+          if (typeof node === 'string') push(node)
+          else if (Array.isArray(node)) node.forEach(walk)
+          else if (typeof node === 'object') Object.values(node).forEach(walk)
+        }
+        walk(JSON.parse(next.textContent))
+      } catch {
+        /* ignore */
+      }
+    }
+
+    document.querySelectorAll('a[href], video[src], source[src], meta[content]').forEach((el) => {
+      push(el.href || el.src || el.content || el.getAttribute('href') || el.getAttribute('src'))
+    })
+
+    if (Array.isArray(window.__inframeNetworkMedia)) {
+      window.__inframeNetworkMedia.forEach(push)
+    }
+
+    return [...found]
+  }
+
+  function pickBestVideo(urls) {
+    if (!urls.length) return ''
+    const scored = urls.map((u) => {
+      let score = 0
+      if (/\.mp4(\?|$)/i.test(u)) score += 50
+      if (/1080|uhd|hd\.|1920/i.test(u)) score += 30
+      if (/720|1280/i.test(u)) score += 20
+      if (/540|640|sd/i.test(u)) score += 5
+      if (/videos\.pexels\.com\/video-files/i.test(u)) score += 15
+      if (/\.m3u8|\.mpd|hls/i.test(u)) score -= 40
+      return { u, score }
+    })
+    scored.sort((a, b) => b.score - a.score)
+    return scored[0]?.u || ''
+  }
+
+  function pexelsDownloadFallback() {
+    const m = location.pathname.match(/\/video\/(?:[^/]*-)?(\d+)\/?/i)
+    if (!m) return ''
+    return `https://www.pexels.com/download/video/${m[1]}/`
+  }
+
+  function resolveBestPageVideo() {
+    return pickBestVideo(scrapePageVideoUrls()) || pexelsDownloadFallback()
+  }
+
   function collectCandidateUrls(el) {
     const urls = []
     const push = (u) => {
-      if (u && !urls.includes(u)) urls.push(u)
+      const url = decodeUrl(u)
+      if (url && !urls.includes(url)) urls.push(url)
     }
     if (!el) return urls
 
@@ -53,16 +139,12 @@
       el.querySelectorAll('source').forEach((source) => {
         push(source.src)
         push(source.getAttribute('data-src'))
-        push(source.getAttribute('srcset'))
       })
       push(el.currentSrc)
       push(el.src)
-
-      // parent card links / download attrs (Pexels and similar)
       let node = el.parentElement
       for (let i = 0; i < 6 && node; i += 1) {
         push(node.getAttribute('data-video-url'))
-        push(node.getAttribute('data-big-src'))
         push(node.getAttribute('href'))
         node.querySelectorAll('a[href]').forEach((a) => push(a.href))
         node = node.parentElement
@@ -72,10 +154,9 @@
       push(el.src)
       push(el.getAttribute('data-src'))
       push(el.getAttribute('data-lazy-src'))
-      push(el.getAttribute('srcset')?.split(',')[0]?.trim().split(' ')[0])
     }
 
-    // recent network media as fallback for blob players
+    scrapePageVideoUrls().forEach(push)
     if (Array.isArray(window.__inframeNetworkMedia)) {
       window.__inframeNetworkMedia.forEach(push)
     }
@@ -84,9 +165,13 @@
 
   function resolveUrl(el) {
     const candidates = collectCandidateUrls(el)
+    const httpVideo = candidates.find(
+      (u) => isHttpUrl(u) && (/\.(mp4|webm|mov)(\?|$)/i.test(u) || /videos\.pexels\.com/i.test(u)),
+    )
+    if (httpVideo) return httpVideo
     const http = candidates.find(isHttpUrl)
     if (http) return http
-    return candidates[0] || ''
+    return resolveBestPageVideo()
   }
 
   function getSharedButton() {
@@ -105,10 +190,9 @@
     btn.addEventListener('click', (event) => {
       event.preventDefault()
       event.stopPropagation()
-      if (!activeEl || !window.inframeGuest?.insert) return
-      const url = resolveUrl(activeEl)
-      const kind = activeEl.tagName === 'VIDEO' ? 'video' : 'image'
-      window.inframeGuest.insert(url || `__recent__:${kind}`)
+      if (!window.inframeGuest?.insert) return
+      const url = activeEl ? resolveUrl(activeEl) : resolveBestPageVideo()
+      window.inframeGuest.insert(url || '__recent__:video')
     })
     document.documentElement.appendChild(btn)
     return btn
@@ -144,12 +228,12 @@
         btn.style.display = 'none'
         activeEl = null
       }
-    }, 700)
+    }, 900)
   }
 
   function bindMedia(el) {
-    if (el.__inframeBoundV4) return
-    el.__inframeBoundV4 = true
+    if (el.__inframeBoundV5) return
+    el.__inframeBoundV5 = true
     el.addEventListener('mouseenter', () => placeButton(el))
     el.addEventListener('mousemove', () => placeButton(el))
     el.addEventListener('mouseleave', (event) => {
@@ -164,10 +248,51 @@
     if (!window.__inframeNetworkMedia) window.__inframeNetworkMedia = []
     const list = window.__inframeNetworkMedia
     if (list[0] !== url) list.unshift(url)
-    if (list.length > 30) list.length = 30
+    if (list.length > 40) list.length = 40
   }
 
-  // Observe Performance for media downloads on the page
+  function tryRepairBrokenVideos() {
+    const mp4 = pickBestVideo(scrapePageVideoUrls())
+    if (!mp4) return
+    document.querySelectorAll('video').forEach((video) => {
+      const broken = Boolean(video.error) || !video.currentSrc || video.networkState === 3
+      if (!broken) return
+      try {
+        video.pause()
+        video.src = mp4
+        video.load()
+      } catch {
+        /* ignore */
+      }
+    })
+  }
+
+  function ensurePageInsertButton() {
+    const isVideoPage =
+      /\/video\//i.test(location.pathname) ||
+      document.querySelector('video') ||
+      /videos\.pexels\.com/i.test(document.documentElement.innerHTML)
+
+    let btn = document.querySelector(`.${PAGE_BTN_CLASS}`)
+    if (!isVideoPage) {
+      btn?.remove()
+      return
+    }
+    if (!btn) {
+      btn = document.createElement('button')
+      btn.className = PAGE_BTN_CLASS
+      btn.type = 'button'
+      btn.textContent = 'Вставить видео со страницы'
+      btn.addEventListener('click', (event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        if (!window.inframeGuest?.insert) return
+        window.inframeGuest.insert(resolveBestPageVideo() || '__recent__:video')
+      })
+      document.documentElement.appendChild(btn)
+    }
+  }
+
   try {
     const po = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
@@ -185,9 +310,13 @@
   function scan() {
     ensureStyle()
     document.querySelectorAll('img, video').forEach(bindMedia)
+    tryRepairBrokenVideos()
+    ensurePageInsertButton()
   }
 
   scan()
+  setTimeout(scan, 800)
+  setTimeout(scan, 2000)
   const observer = new MutationObserver(() => scan())
   observer.observe(document.documentElement, { childList: true, subtree: true })
   window.addEventListener(

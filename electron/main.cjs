@@ -26,25 +26,39 @@ let browserView = null
 
 const state = {
   targets: ['premiere', 'aftereffects', 'resolve', 'capcut'],
-  url: 'https://www.pexels.com/',
+  url: 'https://www.google.com/',
   recentMedia: [],
 }
 
 function rememberMediaUrl(url) {
   if (!url || !/^https?:\/\//i.test(url)) return
-  if (!/\.(mp4|webm|mov|m4v)(\?|$)/i.test(url) && !/videos\.pexels\.com|video\./i.test(url)) {
+  if (
+    !/\.(mp4|webm|mov|m4v)(\?|$)/i.test(url) &&
+    !/videos\.pexels\.com|video-files|\/download\/video\//i.test(url)
+  ) {
     return
   }
   state.recentMedia = [url, ...state.recentMedia.filter((u) => u !== url)].slice(0, 40)
 }
 
+function pexelsVideoDownloadFromPage(pageUrl) {
+  const match = String(pageUrl || '').match(/pexels\.com\/(?:[a-z-]+\/)?video\/(?:[^/?#]*-)?(\d+)/i)
+  if (!match) return ''
+  return `https://www.pexels.com/download/video/${match[1]}/`
+}
+
 function resolveInsertUrl(rawUrl) {
   const url = String(rawUrl || '')
   if (url.startsWith('__recent__:')) {
-    return state.recentMedia[0] || ''
+    return state.recentMedia[0] || pexelsVideoDownloadFromPage(state.url) || ''
   }
   if (!url || url.startsWith('blob:') || url.startsWith('data:')) {
-    return state.recentMedia[0] || url
+    return state.recentMedia[0] || pexelsVideoDownloadFromPage(state.url) || url
+  }
+  // If guest sent a Pexels watch page, map to download endpoint
+  const asDownload = pexelsVideoDownloadFromPage(url)
+  if (asDownload && !/\.(mp4|webm|mov)(\?|$)/i.test(url)) {
+    return asDownload
   }
   return url
 }
@@ -76,6 +90,9 @@ function injectInsertButtons() {
 }
 
 function createBrowserView() {
+  const chromeUA =
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+
   browserView = new BrowserView({
     webPreferences: {
       preload: path.join(__dirname, 'guest-preload.cjs'),
@@ -88,11 +105,14 @@ function createBrowserView() {
   layoutBrowserView()
 
   const wc = browserView.webContents
+  wc.setUserAgent(chromeUA)
 
   wc.session.webRequest.onCompleted({ urls: ['*://*/*'] }, (details) => {
     if (details.statusCode >= 200 && details.statusCode < 400) {
       rememberMediaUrl(details.url)
-      if (details.resourceType === 'media') rememberMediaUrl(details.url)
+      if (details.resourceType === 'media' || details.resourceType === 'xhr') {
+        rememberMediaUrl(details.url)
+      }
     }
   })
 
@@ -107,7 +127,6 @@ function createBrowserView() {
   wc.on('did-stop-loading', () => {
     mainWindow?.webContents.send('browser:loading', false)
     injectInsertButtons()
-    // push captured media urls into page for button fallback
     const list = JSON.stringify(state.recentMedia.slice(0, 20))
     wc.executeJavaScript(`window.__inframeNetworkMedia = ${list};`).catch(() => {})
   })
@@ -190,6 +209,8 @@ async function handleInsert(imageUrl) {
     throw error
   }
 }
+
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required')
 
 app.whenReady().then(() => {
   // Allow embedding cross-origin images in UI

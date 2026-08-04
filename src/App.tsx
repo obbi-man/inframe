@@ -32,7 +32,7 @@ type PageImage = {
 type Toast = { type: string; message: string; detail?: string }
 
 export default function App() {
-  const [draftUrl, setDraftUrl] = useState('https://www.pexels.com/')
+  const [draftUrl, setDraftUrl] = useState('https://www.google.com/')
   const [loading, setLoading] = useState(false)
   const [targets, setTargets] = useState<TargetId[]>([
     'premiere',
