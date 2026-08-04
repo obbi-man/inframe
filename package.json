@@ -2,7 +2,7 @@
   "name": "inframe",
   "productName": "InFrame",
   "private": false,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Open-source browser helper for editors — insert images and videos into Premiere, After Effects, Resolve, CapCut",
   "license": "MIT",
   "author": "Artem Savinykh",
