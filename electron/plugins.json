@@ -1,0 +1,92 @@
+[
+  {
+    "id": "mr-motion",
+    "name": "MR Motion Presets",
+    "apps": ["premiere", "aftereffects"],
+    "category": "Transitions",
+    "description": "Популярные motion-пресеты и transitions для Premiere / AE.",
+    "url": "https://www.premiumbeat.com/blog/free-after-effects-templates/",
+    "downloadUrl": "https://www.premiumbeat.com/blog/free-after-effects-templates/"
+  },
+  {
+    "id": "film-impact",
+    "name": "Film Impact Lite",
+    "apps": ["premiere"],
+    "category": "Transitions",
+    "description": "Набор переходов для Premiere Pro.",
+    "url": "https://filmimpact.net/",
+    "downloadUrl": "https://filmimpact.net/"
+  },
+  {
+    "id": "animation-composer",
+    "name": "Animation Composer Free",
+    "apps": ["aftereffects"],
+    "category": "Motion",
+    "description": "Бесплатная библиотека анимаций и sound FX для After Effects.",
+    "url": "https://www.misterhorse.com/animation-composer",
+    "downloadUrl": "https://www.misterhorse.com/animation-composer"
+  },
+  {
+    "id": "resolve-fusion-effects",
+    "name": "Resolve FX Pack",
+    "apps": ["resolve"],
+    "category": "Effects",
+    "description": "Бесплатные макросы и эффекты для DaVinci Resolve / Fusion.",
+    "url": "https://www.steakunderwater.com/wesuckless/viewforum.php?f=6",
+    "downloadUrl": "https://www.steakunderwater.com/wesuckless/viewforum.php?f=6"
+  },
+  {
+    "id": "resolve-powergrades",
+    "name": "Free PowerGrades",
+    "apps": ["resolve"],
+    "category": "Color",
+    "description": "Готовые power grades для быстрой цветокоррекции.",
+    "url": "https://www.blackmagicdesign.com/products/davinciresolve",
+    "downloadUrl": "https://www.blackmagicdesign.com/products/davinciresolve"
+  },
+  {
+    "id": "capcut-effects",
+    "name": "CapCut Effect Hub",
+    "apps": ["capcut"],
+    "category": "Effects",
+    "description": "Каталог эффектов и шаблонов CapCut (открыть и скачать из браузера).",
+    "url": "https://www.capcut.com/resource-center",
+    "downloadUrl": "https://www.capcut.com/resource-center"
+  },
+  {
+    "id": "universal-luts",
+    "name": "Free Cinematic LUTs",
+    "apps": ["premiere", "aftereffects", "resolve", "capcut"],
+    "category": "Color",
+    "description": "Универсальные LUT для всех основных монтажных программ.",
+    "url": "https://www.iwltbap.com/free-luts/",
+    "downloadUrl": "https://www.iwltbap.com/free-luts/"
+  },
+  {
+    "id": "soundly-free",
+    "name": "Free SFX Libraries",
+    "apps": ["premiere", "aftereffects", "resolve", "capcut"],
+    "category": "Audio",
+    "description": "Бесплатные звуковые библиотеки для озвучки и монтажа.",
+    "url": "https://freesound.org/",
+    "downloadUrl": "https://freesound.org/"
+  },
+  {
+    "id": "aescripts-free",
+    "name": "aescripts Free Tools",
+    "apps": ["aftereffects", "premiere"],
+    "category": "Tools",
+    "description": "Бесплатные скрипты и плагины для Adobe.",
+    "url": "https://aescripts.com/free/",
+    "downloadUrl": "https://aescripts.com/free/"
+  },
+  {
+    "id": "vx-pack",
+    "name": "Overlay & Texture Packs",
+    "apps": ["premiere", "aftereffects", "resolve", "capcut"],
+    "category": "Assets",
+    "description": "Пыль, свет, плёнка и текстуры для наложений.",
+    "url": "https://www.footagecrate.com/free-footage",
+    "downloadUrl": "https://www.footagecrate.com/free-footage"
+  }
+]
