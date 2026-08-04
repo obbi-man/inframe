@@ -7,40 +7,75 @@ Browse stock sites in an embedded browser, hover a photo or video, click **Inser
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Platform: Windows](https://img.shields.io/badge/platform-Windows-blue.svg)
 
-## Features
+## Установка (Windows)
 
-- Embedded browser (Pexels, Unsplash, Google Images, any site)
-- One-click **Insert** / **Insert video** overlay on media
-- Auto-import into **DaVinci Resolve** Media Pool via Scripting API
-- Inbox folders + JSX helpers for Adobe apps
-- Plugin / resource catalog with quick open in the built-in browser
-- Downloads real JPEG/PNG (avoids AVIF that Resolve can't play)
+### Вариант A — готовый установщик (проще всего)
 
-## Requirements
+1. Откройте [Releases](https://github.com/obbi-man/inframe/releases)
+2. Скачайте `InFrame-Setup-*.exe`
+3. Установите и запустите **InFrame**
 
-- Windows 10/11
-- [Node.js](https://nodejs.org/) 20+
-- For Resolve auto-import:
-  - DaVinci Resolve running with a project open
-  - **Preferences → System → General → External scripting = Local**
-  - Python 3.6+ (64-bit)
-- Optional: Premiere Pro, After Effects, CapCut
+> Если релиза ещё нет: в репозитории нажмите **Actions → Build Windows installer → Run workflow**, либо соберите локально через `build-installer.cmd`.
 
-## Setup
+### Вариант B — из исходников (для разработки)
+
+1. Установите [Node.js LTS 20+](https://nodejs.org/) (галочка *Add to PATH*)
+2. Скачайте репозиторий или:
+   ```bash
+   git clone https://github.com/obbi-man/inframe.git
+   cd inframe
+   ```
+3. Дважды кликните **`install.cmd`**
+4. Дважды кликните **`start.cmd`**
+
+Или в терминале:
 
 ```bash
-git clone https://github.com/obbi-man/inframe.git
-cd inframe
 npm install
 npm run dev
 ```
 
+### Если `npm install` падает / Electron не качается
+
+Частая причина — сеть при загрузке бинарника Electron. Попробуйте зеркало:
+
+```bat
+set ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
+npm install
+```
+
+Потом снова `start.cmd`.
+
+## Сборка установщика у себя
+
+```bat
+build-installer.cmd
+```
+
+или:
+
+```bash
+npm run dist
+```
+
+Готовые файлы появятся в папке `release/`.
+
+## Requirements
+
+- Windows 10/11
+- Для варианта B: Node.js 20+
+- Для автоимпорта в Resolve:
+  - DaVinci Resolve запущен, проект открыт
+  - **Preferences → System → General → External scripting = Local**
+  - Python 3.6+ (64-bit)
+- Опционально: Premiere Pro, After Effects, CapCut
+
 ## Usage
 
-1. Pick target apps in the left panel (Resolve / Premiere / AE / CapCut).
-2. Open a site in the address bar.
-3. Hover an image or play a video → click **Insert**.
-4. Files land in `%USERPROFILE%\InFrame\inbox\` and are imported where possible.
+1. Выберите целевые программы слева (Resolve / Premiere / AE / CapCut).
+2. Откройте сайт в адресной строке.
+3. Наведите на картинку или запустите видео → **Вставить**.
+4. Файлы сохраняются в `%USERPROFILE%\InFrame\inbox\` и импортируются куда возможно.
 
 ### Inbox layout
 
@@ -52,6 +87,25 @@ InFrame/inbox/
   capcut/
   _scripts/          # JSX / Resolve Python helpers
 ```
+
+## Features
+
+- Embedded browser (Pexels, Unsplash, Google Images, any site)
+- One-click **Insert** / **Insert video** overlay on media
+- Auto-import into **DaVinci Resolve** Media Pool via Scripting API
+- Inbox folders + JSX helpers for Adobe apps
+- Plugin / resource catalog with quick open in the built-in browser
+- Downloads real JPEG/PNG (avoids AVIF that Resolve can't play)
+
+## Scripts
+
+| Command | Description |
+|--------|-------------|
+| `install.cmd` | Install dependencies (Windows) |
+| `start.cmd` | Run in development mode |
+| `build-installer.cmd` | Build `.exe` installer |
+| `npm run dev` | Dev (Vite + Electron) |
+| `npm run dist` | Production Windows build |
 
 ## Tech stack
 

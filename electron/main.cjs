@@ -16,7 +16,7 @@ const {
   getInboxRoot,
 } = require('./nle-import.cjs')
 
-const isDev = Boolean(process.env.VITE_DEV_SERVER_URL)
+const isDev = Boolean(process.env.VITE_DEV_SERVER_URL) && !app.isPackaged
 const LAYOUT = { top: 56, left: 340, right: 0, bottom: 0 }
 
 /** @type {BrowserWindow | null} */

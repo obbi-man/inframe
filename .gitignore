@@ -12,6 +12,7 @@ dist
 dist-ssr
 out
 release
+release/**
 *.local
 
 # Editor directories and files
